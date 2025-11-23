@@ -171,7 +171,7 @@ class _MealInputSheetState extends State<MealInputSheet> {
           color: isSelected ? color : Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? color : Color(0xFFE0E0E0),
+            color: isSelected ? color : const Color(0xFFE0E0E0),
             width: 2,
           ),
         ),

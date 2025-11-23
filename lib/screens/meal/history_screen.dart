@@ -287,8 +287,8 @@ class _RatingDialogState extends State<_RatingDialog> {
                 Icons.star,
                 size: 40,
                 color: index < _rating
-                    ? Color(0xFFFFA726)
-                    : Color(0xFFE0E0E0),
+                    ? const Color(0xFFFFA726)
+                    : const Color(0xFFE0E0E0),
               ),
             ),
           ),

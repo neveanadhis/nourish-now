@@ -127,7 +127,7 @@ class AppTheme {
           color: primaryColor,
         ),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: cardBackground,
         elevation: 2,
         shape: RoundedRectangleBorder(
@@ -138,7 +138,6 @@ class AppTheme {
         primary: primaryColor,
         secondary: accentColor,
         tertiary: successColor,
-        background: backgroundColor,
         surface: cardBackground,
       ),
     );

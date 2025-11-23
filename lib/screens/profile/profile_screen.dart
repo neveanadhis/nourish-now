@@ -33,7 +33,7 @@ class ProfileScreen extends StatelessWidget {
                         color: AppTheme.primaryColor,
                         borderRadius: BorderRadius.circular(24),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.person,
                         color: Colors.white,
                         size: 50,

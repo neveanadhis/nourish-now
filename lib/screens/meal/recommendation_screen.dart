@@ -186,7 +186,7 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
                   title: 'The Indulgent Meal',
                   subtitle: 'A tasty treat',
                   meal: recommendation.indulgentMeal,
-                  color: Color(0xFFFFA726),
+                  color: const Color(0xFFFFA726),
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
@@ -231,8 +231,8 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Meal logged successfully!'),
+        const SnackBar(
+          content: Text('Meal logged successfully!'),
           backgroundColor: AppTheme.successColor,
         ),
       );

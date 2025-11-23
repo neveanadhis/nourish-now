@@ -4,7 +4,6 @@ import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/user_provider.dart';
 import '../../theme/app_theme.dart';
-import '../home/home_screen.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({Key? key}) : super(key: key);
@@ -21,8 +20,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   late TextEditingController _ageController;
 
   String _selectedWeightGoal = 'Maintenance';
-  String _selectedBudget = '$';
-  List<String> _selectedRestrictions = [];
+  String _selectedBudget = '\$';
+  final List<String> _selectedRestrictions = [];
 
   final weightGoals = ['Weight Loss', 'Weight Gain', 'Maintenance'];
   final budgets = ['\$', '\$\$', '\$\$\$'];
@@ -202,9 +201,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           const SizedBox(height: 8),
           TextField(
             controller: _firstNameController,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               hintText: 'Enter your first name',
-              prefixIcon: const Icon(Icons.person),
+              prefixIcon: Icon(Icons.person),
             ),
           ),
           const SizedBox(height: 20),
@@ -215,9 +214,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           const SizedBox(height: 8),
           TextField(
             controller: _ageController,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               hintText: 'Enter your age',
-              prefixIcon: const Icon(Icons.cake),
+              prefixIcon: Icon(Icons.cake),
             ),
             keyboardType: TextInputType.number,
           ),
@@ -254,7 +253,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     border: Border.all(
                       color: _selectedWeightGoal == goal
                           ? AppTheme.primaryColor
-                          : Color(0xFFE0E0E0),
+                          : const Color(0xFFE0E0E0),
                     ),
                   ),
                   child: Row(
@@ -372,7 +371,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     border: Border.all(
                       color: _selectedBudget == budget
                           ? AppTheme.primaryColor
-                          : Color(0xFFE0E0E0),
+                          : const Color(0xFFE0E0E0),
                     ),
                   ),
                   child: Row(
