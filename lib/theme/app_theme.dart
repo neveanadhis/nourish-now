@@ -171,4 +171,8 @@ class AppTheme {
       ),
     );
   }
+
+  static Color? get cardColor => null;
+
+  static Color? get titleText => null;
 }

@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+// Gemini SDK
+import 'package:google_generative_ai/google_generative_ai.dart';
+
 import '../models/meal_model.dart';
 import '../models/recommendation_model.dart';
 import '../models/user_model.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class MealProvider extends ChangeNotifier {
   final supabase = Supabase.instance.client;
+
+  GenerativeModel? _geminiModel; // nullable until loaded properly
 
   List<MealModel> _mealHistory = [];
   RecommendationModel? _currentRecommendation;
@@ -19,6 +24,34 @@ class MealProvider extends ChangeNotifier {
   RecommendationModel? get currentRecommendation => _currentRecommendation;
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  MealProvider() {
+    _initializeGemini();
+  }
+
+  // ---------------- GEMINI INITIALIZATION ----------------
+
+  void _initializeGemini() {
+    final apiKey = dotenv.env['GEMINI_API_KEY'];
+
+    if (apiKey == null || apiKey.isEmpty) {
+      debugPrint("FATAL: Gemini API key missing. AI recommendations disabled.");
+      _geminiModel = null;
+      return;
+    }
+
+    _geminiModel = GenerativeModel(
+      model: 'gemini-2.5-flash',
+      apiKey: apiKey,
+      generationConfig: GenerationConfig(
+        responseMimeType: 'application/json',
+      ),
+    );
+  }
+
+  bool get _geminiReady => _geminiModel != null;
+
+  // ---------------- SUPABASE METHODS ----------------
 
   Future<void> fetchMealHistory(String userId) async {
     _isLoading = true;
@@ -69,8 +102,7 @@ class MealProvider extends ChangeNotifier {
           .update({'rating': rating})
           .eq('id', mealId);
 
-      final index =
-          _mealHistory.indexWhere((meal) => meal.id == mealId);
+      final index = _mealHistory.indexWhere((meal) => meal.id == mealId);
       if (index != -1) {
         _mealHistory[index] = _mealHistory[index].copyWith(rating: rating);
         notifyListeners();
@@ -81,6 +113,8 @@ class MealProvider extends ChangeNotifier {
     }
   }
 
+  // ---------------- GEMINI RECOMMENDATION METHOD ----------------
+
   Future<void> generateRecommendations(
     UserModel userData,
     String mealType,
@@ -88,46 +122,94 @@ class MealProvider extends ChangeNotifier {
     String mood,
     String timeOfDay,
   ) async {
+    if (!_geminiReady) {
+      _error = 'AI Service not configured.';
+      notifyListeners();
+      return;
+    }
+
     _isLoading = true;
     _error = null;
     notifyListeners();
 
+    final prompt = _buildRecommendationPrompt(
+      userData, mealType, budget, mood, timeOfDay, _mealHistory,
+    );
+
     try {
-      final supabaseUrl = dotenv.env['SUPABASE_URL'];
-      final anonKey = dotenv.env['SUPABASE_ANON_KEY'];
+      final response = await _geminiModel!.generateContent([
+        Content.text(prompt),
+      ]);
 
-      final response = await http.post(
-        Uri.parse('$supabaseUrl/functions/v1/meal-recommendations'),
-        headers: {
-          'Authorization': 'Bearer $anonKey',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'userData': {
-            'firstName': userData.firstName,
-            'age': userData.age,
-            'weightGoal': userData.weightGoal,
-            'dietaryRestrictions': userData.dietaryRestrictions,
-            'defaultBudget': userData.defaultBudget,
-          },
-          'mealType': mealType,
-          'budget': budget,
-          'mood': mood,
-          'timeOfDay': timeOfDay,
-        }),
-      );
+      final rawText = response.text;
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        _currentRecommendation = RecommendationModel.fromJson(data);
+      if (rawText == null || rawText.isEmpty) {
+        _error = 'AI returned an empty response.';
       } else {
-        _error = 'Failed to generate recommendations';
+        final jsonMap = jsonDecode(rawText);
+        _currentRecommendation = RecommendationModel.fromJson(jsonMap);
       }
     } catch (e) {
-      _error = 'Error: ${e.toString()}';
+      debugPrint('---------------------------------------------------');
+      debugPrint('🚨 GEMINI API ERROR');
+      debugPrint('Type: ${e.runtimeType}');
+      debugPrint('Detail: $e');
+      debugPrint('---------------------------------------------------');
+
+      _error = 'Gemini API Error: $e';
     }
 
     _isLoading = false;
     notifyListeners();
+  }
+
+  // ---------------- PROMPT GENERATOR ----------------
+
+  String _buildRecommendationPrompt(
+    UserModel userData,
+    String mealType,
+    String budget,
+    String mood,
+    String timeOfDay,
+    List<MealModel> history,
+  ) {
+    final historyString = history.take(5).map((meal) {
+      return '• ${meal.mealName} (${meal.date.toIso8601String().substring(5, 10)})';
+    }).join('\n');
+
+    return """
+    Act as a professional nutritionist for a meal recommendation app. 
+    The user is looking for recommendations for the $timeOfDay.
+
+    User Profile:
+    - Age: ${userData.age}
+    - Goal: ${userData.weightGoal}
+    - Dietary Restrictions: ${userData.dietaryRestrictions.isEmpty ? 'None' : userData.dietaryRestrictions.join(', ')}
+
+    Current Preferences:
+    - Meal Type: $mealType
+    - Budget: $budget
+    - Mood: $mood
+
+    Recent Meal History:
+    $historyString
+
+    You MUST return a valid JSON object with this structure:
+
+    {
+      "optimizedMeal": {
+        "name": "Meal Name",
+        "calories": 0,
+        "macros": {"protein": 0.0, "carbs": 0.0, "fat": 0.0},
+        "prepTime": 0,
+        "recipe": "Step-by-step recipe.",
+        "type": "Breakfast/Lunch/Dinner"
+      },
+      "fastEasyMeal": {...},
+      "indulgentMeal": {...}
+    }
+
+    No explanations. No markdown. Only JSON.
+    """;
   }
 }
