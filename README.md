@@ -43,12 +43,8 @@ All recommendations respect your dietary restrictions and budget preferences.
    flutter pub get
    ```
 
-3. **Configure API Key**
-   - Create `.env` file from `.env.example`
-   - Get Google API key from Google Cloud Console
-   - Add credentials to `.env`
 
-4. **Run the App**
+3. **Run the App**
    ```bash
    flutter run
    ```
@@ -57,7 +53,6 @@ See **QUICK_START.md** for detailed setup steps.
 
 ## Documentation
 
-- **QUICK_START.md** - 5-minute setup guide
 - **SETUP.md** - Complete installation and configuration guide
 - **API_SETUP.md** - Google API and Supabase configuration
 - **IMPLEMENTATION.md** - Technical architecture and design details
